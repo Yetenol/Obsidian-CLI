@@ -1,56 +1,68 @@
-# & cls & powershell -Command Start-Process wt -Verb RunAs -ArgumentList """PowerShell.exe -Command cd "%CD%" `n Invoke-Command -ScriptBlock ([ScriptBlock]::Create(((Get-Content %0) -join [Environment]::NewLine)))""" & exit
-# Script is executable and self-elevating when renamed *.cmd or *.bat
+# & cls & powershell -Command "Invoke-Command -ScriptBlock ([ScriptBlock]::Create(((Get-Content """%0""") -join [Environment]::NewLine)))" & exit
+# Script is executable when renamed *.cmd or *.bat
 
 # SET CONFIGURATION
-$cloudPath = "D:\OneDrive\Config\Obsidian"
-$localPath = ".obsidian"
+$ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
+$folder = "." | Get-Item
+$cloudConfig = "D:\OneDrive\Config\Obsidian" | Get-Item
+$vaultConfig = "$folder\.obsidian" | % { [System.IO.DirectoryInfo]::new($_) }
+$obsidianConfig = "$env:AppData\obsidian\obsidian.json" | Get-Item
+$syncContent = [string[]]@(
+    '.\plugins';
+    '.\app.json';
+    '.\appearance.json';
+    '.\community-plugins.json';
+    '.\core-plugins.json';
+    '.\hotkeys.json';
+    '.\templates.json';
+)
+$obsidianURI = "obsidian://action?path=$folder"
 
-# Validate paths
-if (-not (Test-Path $cloudPath)) {
-    throw "Cannot find cloud location $cloudPath"
-}
-if (-not (Test-Path $localPath)) {
-    throw "Folder has never been opened in Obsidian $localPath"
-}
-
-# Confirm folder
-$path = (Resolve-Path .).Path
+# Validate folder
 Write-Host "Opening " -NoNewline
-Write-Host $path -ForegroundColor Cyan -NoNewline
-Write-Host " in Obsidian" -NoNewline
-1..5 |
-foreach { 
-    Start-Sleep -Seconds 1
-    Write-Host "." -NoNewline
-}
+Write-Host $folder -ForegroundColor Cyan -NoNewline
+Write-Host " in Obsidian"
 
 # Make cloud files AlwaysAvailable
-$cloudPath | 
-foreach {
-    $item = Get-Item -Path $_    
-    Write-Output $item
-    if ($item.PSIsContainer) {
-        # Add directory content recursively
-        Get-ChildItem -Path $item -Recurse | where { $_.PSIsContainer } | Get-Item
-        Get-ChildItem -Path $item -Recurse -File
-    }
-} | 
+$syncContent | 
 foreach { 
+    Get-Item "$cloudConfig\$_"
+} | foreach {
+    if ($_.PSIsContainer) {
+        # Add directory content recursively
+        Get-ChildItem -Path $_ -Recurse | where { $_.PSIsContainer } | Get-Item
+        Get-ChildItem -Path $_ -Recurse -File
+    }
+} | foreach { 
     $_.Attributes = $_.Attributes -bor 0x080000
 }
 
-# Create symlinks
-try {
-    Remove-Item -Path $localPath -Recurse
+# Open existing vaults
+if (Test-Path -Path $vaultConfig) {
+    Start-Process $obsidianURI
+    return
 }
-catch {
+
+# Create symlinks via elevated PowerShell
+$commands = $syncContent | 
+foreach {
+    Write-Output "New-Item -ItemType SymbolicLink -Path `"$vaultConfig\$_`" -Target `"$cloudConfig\$_`" -Force"
 }
-New-Item -ItemType SymbolicLink -Name $localPath -Target $cloudPath -Force
+$commands = $commands -join "`n"
+Start-Process -Wait wt -Verb RunAs -ArgumentList "PowerShell.exe -Command $commands"
 
-# Attribute symblink as SYSTEM
-$item = Get-Item -Path $localPath
-# $item.Attributes = $item.Attributes -bor [System.IO.FileAttributes]::System -bor [System.IO.FileAttributes]::Hidden
-$path = (Resolve-Path .).Path
-Start-Process "obsidian://action?path=$path"
+# Hide vaultConfig
+$vaultConfig.Attributes = $item.Attributes -bor [System.IO.FileAttributes]::Hidden
 
-while ($Error) {}   # Keep alive on failure
+# Add folder to Obsidian vaults
+$config = Get-Content -Path $obsidianConfig -Raw | ConvertFrom-Json
+$unixMillis = [DateTimeOffset]::Now.ToUnixTimeMilliseconds()
+$config.vaults | Add-Member -NotePropertyName $unixMillis `
+    -NotePropertyValue ([PSCustomObject]@{ 
+        path = $folder.FullName;
+        ts   = $unixMillis;
+    })
+$config | ConvertTo-Json | Set-Content -Path $obsidianConfig
+
+# Open vault
+Start-Process $obsidianURI
