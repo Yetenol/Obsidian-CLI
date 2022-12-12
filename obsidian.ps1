@@ -1,9 +1,10 @@
-# & cls & powershell -Command "Invoke-Command -ScriptBlock ([ScriptBlock]::Create(((Get-Content """%0""") -join [Environment]::NewLine)))" & exit
-# Script is executable when renamed *.cmd or *.bat
+param (
+    [Parameter(Mandatory)]  [String]$Path
+)
 
 # SET CONFIGURATION
 $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
-$folder = "." | Get-Item
+$folder = $Path | Get-Item
 $cloudConfig = "D:\OneDrive\Config\Obsidian" | Get-Item
 $vaultConfig = "$folder\.obsidian" | % { [System.IO.DirectoryInfo]::new($_) }
 $obsidianConfig = "$env:AppData\obsidian\obsidian.json" | Get-Item
@@ -18,10 +19,11 @@ $syncContent = [string[]]@(
 )
 $obsidianURI = "obsidian://action?path=$folder"
 
-# Validate folder
-Write-Host "Opening " -NoNewline
-Write-Host $folder -ForegroundColor Cyan -NoNewline
-Write-Host " in Obsidian"
+# Open existing vaults
+if (Test-Path -Path $vaultConfig) {
+    Start-Process $obsidianURI
+    return
+}
 
 # Make cloud files AlwaysAvailable
 $syncContent | 
@@ -35,12 +37,6 @@ foreach {
     }
 } | foreach { 
     $_.Attributes = $_.Attributes -bor 0x080000
-}
-
-# Open existing vaults
-if (Test-Path -Path $vaultConfig) {
-    Start-Process $obsidianURI
-    return
 }
 
 # Create symlinks via elevated PowerShell
