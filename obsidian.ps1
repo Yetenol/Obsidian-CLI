@@ -47,8 +47,14 @@ foreach {
 $commands = $commands -join "`n"
 Start-Process -Wait wt -Verb RunAs -ArgumentList "PowerShell.exe -Command $commands"
 
-# Hide vaultConfig
+# Hide and ignore vaultConfig
 $vaultConfig.Attributes = $item.Attributes -bor [System.IO.FileAttributes]::Hidden
+
+# Create attachments, templates folder
+@('.\attachments'; '.\templates') | 
+foreach { 
+    New-Item -ItemType Directory -Path "$folder\$_" -ErrorAction SilentlyContinue
+}
 
 # Add folder to Obsidian vaults
 $config = Get-Content -Path $obsidianConfig -Raw | ConvertFrom-Json
