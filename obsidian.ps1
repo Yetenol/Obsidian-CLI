@@ -1,13 +1,14 @@
 param (
-    [Parameter(Mandatory)]  [String]$Path
+    [Parameter(Mandatory)]  [String]$Path,
+    [Switch]$RemoveVault
 )
 
 # SET CONFIGURATION
 $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
-$folder = $Path | Get-Item
+$Path = $Path | Convert-Path
 $obsidianConfig = "$env:AppData\obsidian\obsidian.json" | Get-Item
 $cloudConfig = "D:\OneDrive\Config\Obsidian" | Get-Item
-$vaultConfig = "$folder\.obsidian" | foreach { [System.IO.DirectoryInfo]::new($_) }
+$vaultConfig = "$Path\.obsidian" | foreach { [System.IO.DirectoryInfo]::new($_) }
 $syncChildren = [String[]]@(
     '.\plugins\';
     '.\app.json';
@@ -20,10 +21,42 @@ $syncChildren = [String[]]@(
 $copyChildren = [String[]]@(
     '.\workspace.json'
 )
-$obsidianURI = "obsidian://action?path=$folder"
+$createFolders = [String[]]@(
+    '.\attachments';
+    '.\templates'
+) | foreach { [System.IO.DirectoryInfo]::new("$Path/$_") }
+
+$obsidianURI = "obsidian://action?path=$Path"
+$jsonConfig = Get-Content -Path $obsidianConfig -Raw | ConvertFrom-Json
+$knownVaults = $jsonConfig.vaults.PSObject.Properties | foreach {
+    [PSCustomObject]@{
+        ID = $_.Name;
+        Path = $_.Value.Path;
+    }
+}
+
+# Forget vault and remove config folder
+if ($RemoveVault) {
+    # Remove config folder
+    if (Test-Path $vaultConfig) {
+        Remove-Item -Path "$Path\.obsidian" -Recurse -Force
+    }
+
+    # Remove empty folders
+    $createFolders | where Exists | where { -not (Test-Path "$_/*") } | foreach {
+        Remove-Item -Path $_
+    }
+
+    # Forget vault
+    $knownVaults | where Path -eq $Path | foreach {
+        $jsonConfig.vaults.PSObject.Properties.Remove($_.ID)
+    }
+    $jsonConfig | ConvertTo-Json | Set-Content -Path $obsidianConfig
+    return
+}
 
 # Open existing vaults
-if (Test-Path -Path $vaultConfig) {
+if (($knownVaults.Path -contains $Path) -and (Test-Path $vaultConfig)) {
     Start-Process $obsidianURI
     return
 }
@@ -47,6 +80,7 @@ $commands = $syncChildren | foreach {
 }
 $commands = $commands -join "`n"
 Start-Process -Wait wt -Verb RunAs -ArgumentList "PowerShell.exe -Command $commands"
+Set-Content -Path "$vaultConfig\.gitignore" -Value "*`n!.gitignore"
 
 # Copy workplace setup
 $copyChildren | foreach {
@@ -56,24 +90,23 @@ $copyChildren | foreach {
 # Hide and ignore vaultConfig
 $vaultConfig.Attributes = $item.Attributes -bor [System.IO.FileAttributes]::Hidden
 
-# Create attachments, templates folder
-@('.\attachments'; '.\templates') | foreach { 
-    New-Item -ItemType Directory -Path "$folder\$_" -ErrorAction SilentlyContinue
+# Create folders unless already present
+$createFolders | where Exists -eq $false | foreach {
+    New-Item -ItemType Directory -Path $_ | Out-Null
 }
 
 # Add folder to Obsidian vaults
 $jsonConfig = Get-Content -Path $obsidianConfig -Raw | ConvertFrom-Json
-$alreadyPresent = $jsonConfig.vaults.PSObject.Properties.value.path -contains $folder.FullName
+$alreadyPresent = $knownVaults.Path -contains $Path
 if (-not $alreadyPresent) {
-    $unixMillis = [DateTimeOffset]::Now.ToUnixTimeMilliseconds()
-    
-    $jsonConfig.vaults | Add-Member -NotePropertyName $unixMillis `
-        -NotePropertyValue ([PSCustomObject]@{ 
-            path = $folder.FullName;
-            ts   = $unixMillis;
-        })
-    $jsonConfig | ConvertTo-Json | Set-Content -Path $obsidianConfig
+    [PSCustomObject]@{ 
+        path = $Path;
+        ts   = [DateTimeOffset]::Now.ToUnixTimeMilliseconds();
+    } | foreach {
+        Add-Member -MemberType NoteProperty -InputObject $jsonConfig.vaults -Name $_.ts -Value $_
+    }
 
+    $jsonConfig | ConvertTo-Json | Set-Content -Path $obsidianConfig
 }
 
 # Open vault
