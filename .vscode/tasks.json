@@ -6,7 +6,10 @@
         {
             "label": "ps2exe",
             "type": "shell",
-            "command": "Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass; Invoke-ps2exe obsidian.ps1 bin\\obsidian.exe",
+            "command": [
+                "Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass\n",
+                "Invoke-ps2exe -inputFile obsidian.ps1 -outputFile bin\\obsidian.exe",
+            ],
             "problemMatcher": [],
             "group": {
                 "kind": "build",

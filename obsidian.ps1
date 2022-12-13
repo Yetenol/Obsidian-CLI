@@ -1,6 +1,6 @@
 param (
     [Parameter(Mandatory)]  [String]$Path,
-    [Switch]$RemoveVault
+    [Switch]$RemoveVault,
 )
 
 # SET CONFIGURATION
@@ -19,7 +19,8 @@ $syncChildren = [String[]]@(
     '.\templates.json';
 )
 $copyChildren = [String[]]@(
-    '.\workspace.json'
+    '.\workspace.json';
+    '.\graph'
 )
 $createFolders = [String[]]@(
     '.\attachments';
@@ -80,17 +81,16 @@ $commands = $syncChildren | foreach {
 }
 $commands = $commands -join "`n"
 Start-Process -Wait wt -Verb RunAs -ArgumentList "PowerShell.exe -Command $commands"
+# Hide and ignore vaultConfig
 Set-Content -Path "$vaultConfig\.gitignore" -Value "*`n!.gitignore"
+$vaultConfig.Attributes = $item.Attributes -bor [System.IO.FileAttributes]::Hidden
 
-# Copy workplace setup
+# Import workplace setup
 $copyChildren | foreach {
     Copy-Item -Path "$cloudConfig\$_" -Destination "$vaultConfig\$_"
 }
 
-# Hide and ignore vaultConfig
-$vaultConfig.Attributes = $item.Attributes -bor [System.IO.FileAttributes]::Hidden
-
-# Create folders unless already present
+# Create folders if none exist
 $createFolders | where Exists -eq $false | foreach {
     New-Item -ItemType Directory -Path $_ | Out-Null
 }
