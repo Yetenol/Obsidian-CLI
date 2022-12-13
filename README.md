@@ -31,7 +31,7 @@
 
 # Setup instructions
 
-- install dependency **[ps2exe](https://github.com/MScholtes/PS2EXE)** via elevated command
+- install dependency **[ps2exe](https://github.com/MScholtes/PS2EXE)** using elevated command
 	```powershell
 	Install-Module ps2exe
 	```
@@ -40,6 +40,18 @@
 	```powershell
 	Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
 	Invoke-ps2exe -inputFile ".\obsidian.ps1" -outputFile ".\bin\obsidian.exe" -iconFile "$env:LocalAppData\Obsidian\Obsidian.exe"
+	```
+
+- **add to PATH** using elevated commands
+	```powershell
+	$binaryPath = ".\bin" | Convert-Path -ErrorAction Stop
+	$locations = $env:PATH -split ";"
+	if ($locations -contains $binaryPath) {
+		return
+	}
+	$locations + $binaryPath -join ";" | foreach { 
+		Set-ItemProperty -Path $registryKey -Name "PATH" -Value $_ 
+	}    	
 	```
 
 - add **context menu entries**  
