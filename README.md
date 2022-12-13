@@ -15,6 +15,11 @@
     ```powershell
     obsidian $path -RemoveVault
     ```
+- **reapply** workplace layout  
+    Repair the vault
+    ```powershell
+    obsidian $path -Force
+    ```
 - **right-click any folder** in Windows Explorer and click *Open as Obsidian vault*
 
 # Features

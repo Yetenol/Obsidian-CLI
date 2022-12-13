@@ -1,6 +1,7 @@
 param (
     [Parameter(Mandatory)]  [String]$Path,
-    [Switch]$RemoveVault,
+    [Switch]$Force,
+    [Switch]$RemoveVault
 )
 
 # SET CONFIGURATION
@@ -20,7 +21,7 @@ $syncChildren = [String[]]@(
 )
 $copyChildren = [String[]]@(
     '.\workspace.json';
-    '.\graph'
+    '.\graph.json'
 )
 $createFolders = [String[]]@(
     '.\attachments';
@@ -57,7 +58,10 @@ if ($RemoveVault) {
 }
 
 # Open existing vaults
-if (($knownVaults.Path -contains $Path) -and (Test-Path $vaultConfig)) {
+$isOpeningAllowed = $Force -eq $false
+$doesVaultExists = $knownVaults.Path -contains $Path
+$isVaultInitialized = Test-Path -Path $vaultConfig
+if ($isOpeningAllowed -and $doesVaultExists -and $isVaultInitialized) {
     Start-Process $obsidianURI
     return
 }
