@@ -48,13 +48,14 @@ OpenIn-Obsidian is a command line interface to create, open, delete Obsidian vau
 - **add to PATH** using elevated commands
 	```powershell
 	$binaryPath = ".\bin" | Convert-Path -ErrorAction Stop
+	$registryKey = 'HKLM:\System\CurrentControlSet\Control\Session Manager\Environment'
 	$locations = $env:PATH -split ";"
 	if ($locations -contains $binaryPath) {
 		return
 	}
-	$locations + $binaryPath -join ";" | foreach { 
-		Set-ItemProperty -Path $registryKey -Name "PATH" -Value $_ 
-	}    	
+	$locations + $binaryPath -join ";" | foreach {
+		Set-ItemProperty -Path $registryKey -Name "PATH" -Value $_
+	}	
 	```
 
 - add **context menu entries**  
