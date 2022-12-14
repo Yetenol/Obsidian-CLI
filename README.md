@@ -1,9 +1,9 @@
-# OpenIn-Obsidian
+# Obsidian CLI
 
-[![Download script](https://img.shields.io/github/downloads/yetenol/OpenIn-Obsidian/total.svg)](https://github.com/yetenol/OpenIn-Obsidian/releases/latest/download/obsidian.exe)
-[![List releases](https://img.shields.io/github/release/yetenol/OpenIn-Obsidian.svg)](https://github.com/yetenol/OpenIn-Obsidian/releases)
+[![Download script](https://img.shields.io/github/downloads/yetenol/Obsidian CLI/total.svg)](https://github.com/yetenol/Obsidian-CLI/releases/latest/download/obsidian.exe)
+[![List releases](https://img.shields.io/github/release/yetenol/Obsidian-CLI.svg)](https://github.com/yetenol/Obsidian-CLI/releases)
 
-OpenIn-Obsidian is a command line interface to create, open, delete Obsidian vaults and to share settings, plugins and layouts between vaults.
+Obsidian CLI is a command line interface to create, open, delete Obsidian vaults and to share settings, plugins and layouts between vaults.
 
 # Usage
 
