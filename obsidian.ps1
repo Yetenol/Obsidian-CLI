@@ -84,7 +84,7 @@ $commands = $syncChildren | foreach {
     Write-Output "New-Item -ItemType SymbolicLink -Path `"$vaultConfig\$_`" -Target `"$cloudConfig\$_`" -Force"
 }
 $commands = $commands -join "`n"
-Start-Process -Wait wt -Verb RunAs -ArgumentList "PowerShell.exe -Command $commands"
+Start-Process wt.exe "PowerShell.exe -Command $commands" -Wait -Verb RunAs -WindowStyle Hidden
 # Hide and ignore vaultConfig
 Set-Content -Path "$vaultConfig\.gitignore" -Value "*`n!.gitignore"
 $vaultConfig.Attributes = $item.Attributes -bor [System.IO.FileAttributes]::Hidden

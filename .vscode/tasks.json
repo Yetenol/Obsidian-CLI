@@ -8,7 +8,7 @@
             "type": "shell",
             "command": [
                 "Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass\n",
-                "Invoke-ps2exe -inputFile obsidian.ps1 -outputFile bin\\obsidian.exe",
+                "Invoke-ps2exe -inputFile obsidian.ps1 -outputFile bin\\obsidian.exe -noConsole",
             ],
             "problemMatcher": [],
             "group": {

@@ -3,7 +3,7 @@
 [![Download script](https://img.shields.io/github/downloads/yetenol/Obsidian CLI/total.svg)](https://github.com/yetenol/Obsidian-CLI/releases/latest/download/obsidian.exe)
 [![List releases](https://img.shields.io/github/release/yetenol/Obsidian-CLI.svg)](https://github.com/yetenol/Obsidian-CLI/releases)
 
-Obsidian CLI is a command line interface to create, open, delete Obsidian vaults and to share settings, plugins and layouts between vaults.
+Obsidian CLI is a command line interface to create, open and delete Obsidian vaults and to share settings, plugins and layouts between vaults.
 
 # Usage
 
@@ -42,7 +42,7 @@ Obsidian CLI is a command line interface to create, open, delete Obsidian vaults
   by packaging the Powershell script
 	```powershell
 	Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-	Invoke-ps2exe -inputFile ".\obsidian.ps1" -outputFile ".\bin\obsidian.exe" -iconFile "$env:LocalAppData\Obsidian\Obsidian.exe"
+	Invoke-ps2exe -inputFile ".\obsidian.ps1" -outputFile ".\bin\obsidian.exe" -noConsole
 	```
 
 - **add to PATH** using elevated commands
