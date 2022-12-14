@@ -5,12 +5,12 @@ param (
 )
 
 # SET CONFIGURATION
-$ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
-$Path = $Path | Convert-Path | % { $_ -replace "\\$", "" } | Resolve-Path
-$obsidianConfig = "$env:AppData\obsidian\obsidian.json" | Get-Item
-$cloudConfig = "D:\OneDrive\Config\Obsidian" | Get-Item
-$vaultConfig = "$Path\.obsidian" | foreach { [System.IO.DirectoryInfo]::new($_) }
-$syncChildren = [String[]]@(
+$ErrorActionPreference = [Management.Automation.ActionPreference]::Stop
+[String] $Path = $Path | Convert-Path | % { $_ -replace "\\$", "" }
+[IO.FileInfo] $obsidianConfig = "$env:AppData\obsidian\obsidian.json" | Get-Item
+[IO.DirectoryInfo] $cloudConfig = "D:\OneDrive\Config\Obsidian" | Get-Item
+[IO.DirectoryInfo] $vaultConfig = "$Path\.obsidian" | foreach { [IO.DirectoryInfo]::new($_) }
+[String[]] $syncChildren = @(
     '.\plugins\';
     '.\app.json';
     '.\appearance.json';
@@ -19,18 +19,18 @@ $syncChildren = [String[]]@(
     '.\hotkeys.json';
     '.\templates.json';
 )
-$copyChildren = [String[]]@(
+[String[]] $copyChildren = @(
     '.\workspace.json';
     '.\graph.json'
 )
-$createFolders = [String[]]@(
+[IO.DirectoryInfo[]] $createFolders = @(
     '.\attachments';
     '.\templates'
-) | foreach { [System.IO.DirectoryInfo]::new("$Path/$_") }
+) | foreach { [IO.DirectoryInfo]::new("$Path/$_") }
 
-$obsidianURI = "obsidian://action?path=$Path"
-$jsonConfig = Get-Content -Path $obsidianConfig -Raw | ConvertFrom-Json
-$knownVaults = $jsonConfig.vaults.PSObject.Properties | foreach {
+[String] $obsidianURI = "obsidian://action?path=$Path"
+[PSCustomObject] $jsonConfig = Get-Content -Path $obsidianConfig -Raw | ConvertFrom-Json
+[PSCustomObject[]] $knownVaults = $jsonConfig.vaults.PSObject.Properties | foreach {
     [PSCustomObject]@{
         ID = $_.Name;
         Path = $_.Value.Path;
