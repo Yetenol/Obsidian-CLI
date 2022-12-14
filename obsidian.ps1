@@ -6,7 +6,7 @@ param (
 
 # SET CONFIGURATION
 $ErrorActionPreference = [System.Management.Automation.ActionPreference]::Stop
-$Path = $Path | Convert-Path
+$Path = $Path | Convert-Path | % { $_ -replace "\\$", "" } | Resolve-Path
 $obsidianConfig = "$env:AppData\obsidian\obsidian.json" | Get-Item
 $cloudConfig = "D:\OneDrive\Config\Obsidian" | Get-Item
 $vaultConfig = "$Path\.obsidian" | foreach { [System.IO.DirectoryInfo]::new($_) }
