@@ -1,5 +1,6 @@
 param (
     [Parameter(Mandatory)] [String] $Path,
+    [String] $VaultPath = "",
     [Switch] $Force,
     [Switch] $RemoveVault,
     [String] $GlobalConfig = "D:\OneDrive\Config\Obsidian",
@@ -27,28 +28,8 @@ param (
 # Input validation, formatting
 $ErrorActionPreference = [Management.Automation.ActionPreference]::Stop
 [String] $Path = $Path -replace '[\\/]$', '' | Convert-Path
-[IO.FileInfo] $ObsidianConfig = $ObsidianConfig | Get-Item
-[IO.DirectoryInfo] $GlobalConfig = $GlobalConfig -replace '[\\/]$', '' | Get-Item
 
-Set-Location -Path $Path
-[IO.DirectoryInfo] $VaultConfig = $VaultConfig -replace '[\\/]$', '' | foreach {
-    $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($_)
-} | foreach { 
-    [IO.DirectoryInfo]::new($_)
-}
-
-$SyncContent + $CopyContent + $CreateFolders | where { 
-    [IO.Path]::IsPathRooted($_)
-} | foreach {
-    Write-Error "Content must be a relative path: $_"
-}
-[String[]] $SyncContent = $SyncContent | where { Get-Item "$globalConfig\$_" -Force }
-[String[]] $CopyContent = $CopyContent | where { Get-Item "$globalConfig\$_" -Force }
-[IO.DirectoryInfo[]] $CreateFolders = $CreateFolders | foreach { 
-    [IO.DirectoryInfo]::new("$Path/$_")
-}
-
-[String] $obsidianURI = "obsidian://action?path=$Path"
+# Read known vaults
 [PSCustomObject] $jsonConfig = Get-Content -Path $ObsidianConfig -Raw | ConvertFrom-Json
 [PSCustomObject[]] $knownVaults = $jsonConfig.vaults.PSObject.Properties | foreach {
     [PSCustomObject]@{
@@ -57,11 +38,56 @@ $SyncContent + $CopyContent + $CreateFolders | where {
     }
 }
 
+# Get vault path
+if ($VaultPath -ne "") {
+    [String] $VaultPath = $VaultPath -replace '[\\/]$', '' | Convert-Path
+} else {
+    foreach ($_ in $knownVaults.Path) {
+        if ($Path.Contains($_)) {
+            [String] $VaultPath = $_
+            break
+        }
+    }
+    if ($VaultPath -eq "") {
+        $item = Get-Item $Path -Force
+        if ($item -is [IO.DirectoryInfo]) {
+            [String] $VaultPath = $item
+        } else {
+            [String] $VaultPath = $item.Directory
+        }
+    }
+}
+
+# Input validation, formatting
+[IO.FileInfo] $ObsidianConfig = $ObsidianConfig | Get-Item
+[IO.DirectoryInfo] $GlobalConfig = $GlobalConfig -replace '[\\/]$', '' | Get-Item
+$VaultConfig + $SyncContent + $CopyContent + $CreateFolders | where { 
+    [IO.Path]::IsPathRooted($_)
+} | foreach {
+    Write-Error "Path must be relative: $_"
+}
+Set-Location -Path $VaultPath
+[IO.DirectoryInfo] $VaultConfig = $VaultConfig -replace '[\\/]$', '' | foreach {
+    $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($_)
+} | foreach { 
+    [IO.DirectoryInfo]::new($_)
+}
+[String[]] $SyncContent = $SyncContent | where { Get-Item "$globalConfig\$_" -Force }
+[String[]] $CopyContent = $CopyContent | where { Get-Item "$globalConfig\$_" -Force }
+[IO.DirectoryInfo[]] $CreateFolders = $CreateFolders | foreach {
+    $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($_)
+} | foreach { 
+    [IO.DirectoryInfo]::new($_)
+}
+[String] $obsidianURI = "obsidian://open?path=$Path"
+
+
+
 # Forget vault and remove config folder
 if ($RemoveVault) {
     # Remove config folder
     if (Test-Path $vaultConfig) {
-        Remove-Item -Path "$Path\.obsidian" -Recurse -Force
+        Remove-Item -Path "$VaultPath\.obsidian" -Recurse -Force
     }
 
     # Remove empty folders
@@ -70,7 +96,7 @@ if ($RemoveVault) {
     }
 
     # Forget vault
-    $knownVaults | where Path -eq $Path | foreach {
+    $knownVaults | where Path -eq $VaultPath | foreach {
         $jsonConfig.vaults.PSObject.Properties.Remove($_.ID)
     }
     $jsonConfig | ConvertTo-Json | Set-Content -Path $ObsidianConfig
@@ -78,8 +104,8 @@ if ($RemoveVault) {
 }
 
 # Open existing vaults
-$isOpeningAllowed = $Force -eq $false
-$doesVaultExists = $knownVaults.Path -contains $Path
+$doesVaultExists = $knownVaults.Path -contains $VaultPath
+$isOpeningAllowed = -not $Force
 $isVaultInitialized = Test-Path -Path $vaultConfig
 if ($isOpeningAllowed -and $doesVaultExists -and $isVaultInitialized) {
     Start-Process $obsidianURI
@@ -121,10 +147,10 @@ $CreateFolders | where Exists -eq $false | foreach {
 
 # Add folder to Obsidian vaults
 $jsonConfig = Get-Content -Path $ObsidianConfig -Raw | ConvertFrom-Json
-$alreadyPresent = $knownVaults.Path -contains $Path
+$alreadyPresent = $knownVaults.Path -contains $VaultPath
 if (-not $alreadyPresent) {
     [PSCustomObject]@{ 
-        path = $Path;
+        path = $VaultPath;
         ts   = [DateTimeOffset]::Now.ToUnixTimeMilliseconds();
     } | foreach {
         Add-Member -MemberType NoteProperty -InputObject $jsonConfig.vaults -Name $_.ts -Value $_
