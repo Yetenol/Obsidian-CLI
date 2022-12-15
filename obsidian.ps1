@@ -53,7 +53,15 @@ if ($VaultPath -ne "") {
         if ($item -is [IO.DirectoryInfo]) {
             [String] $VaultPath = $item
         } else {
-            [String] $VaultPath = $item.Directory
+            # Find best vault folder like git repository
+            $folder = $item.Directory
+            for (; $folder; $folder = $folder.Parent) {
+                if (Join-Path $folder.FullName ".git" | Test-Path) {
+                    [String] $VaultPath = $folder.FullName
+                    break
+                }
+            }
+            [String] $VaultPath = $folder.FullName
         }
     }
 }
