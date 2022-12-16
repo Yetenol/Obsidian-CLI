@@ -21,7 +21,6 @@ param (
     ),
     [String[]] $CreateFolders = @(
         '.\attachments';
-        '.\templates';
     )
 )
 
