@@ -8,6 +8,8 @@ param (
     [String] $VaultConfig = ".\.obsidian",
     [String[]] $SyncContent = @(
         '.\plugins\';
+        '.\snippets\';
+        '.\themes\';
         '.\app.json';
         '.\appearance.json';
         '.\community-plugins.json';
