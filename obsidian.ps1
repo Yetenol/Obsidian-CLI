@@ -3,7 +3,7 @@ param (
     [String] $VaultPath = "",
     [Switch] $Force,
     [Switch] $RemoveVault,
-    [String] $GlobalConfig = "D:\OneDrive\Config\Obsidian",
+    [String] $GlobalConfig = "D:\Nextcloud\Config\Obsidian",
     [String] $ObsidianConfig = "$env:AppData\obsidian\obsidian.json",
     [String] $VaultConfig = ".\.obsidian",
     [String[]] $SyncContent = @(
