@@ -12,14 +12,14 @@ param (
         '.\themes\';
         '.\app.json';
         '.\appearance.json';
-        '.\community-plugins.json';
-        '.\core-plugins.json';
         '.\hotkeys.json';
         '.\templates.json';
     ),
     [String[]] $CopyContent = @(
         '.\workspace.json';
         '.\graph.json';
+        '.\community-plugins.json';
+        '.\core-plugins.json';
     ),
     [String[]] $CreateFolders = @(
         '.\attachments';
@@ -34,7 +34,7 @@ $ErrorActionPreference = [Management.Automation.ActionPreference]::Stop
 [PSCustomObject] $jsonConfig = Get-Content -Path $ObsidianConfig -Raw | ConvertFrom-Json
 [PSCustomObject[]] $knownVaults = $jsonConfig.vaults.PSObject.Properties | foreach {
     [PSCustomObject]@{
-        ID = $_.Name;
+        ID   = $_.Name;
         Path = $_.Value.Path;
     }
 }
@@ -42,7 +42,8 @@ $ErrorActionPreference = [Management.Automation.ActionPreference]::Stop
 # Get vault path
 if ($VaultPath -ne "") {
     [String] $VaultPath = $VaultPath -replace '[\\/]$', '' | Convert-Path
-} else {
+}
+else {
     foreach ($_ in $knownVaults.Path) {
         if ($Path.Contains($_)) {
             [String] $VaultPath = $_
@@ -53,7 +54,8 @@ if ($VaultPath -ne "") {
         $item = Get-Item $Path -Force
         if ($item -is [IO.DirectoryInfo]) {
             [String] $VaultPath = $item
-        } else {
+        }
+        else {
             # Find best vault folder like git repository
             $folder = $item.Directory
             for (; $folder; $folder = $folder.Parent) {
