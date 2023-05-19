@@ -143,7 +143,7 @@ $commands = $SyncContent | foreach {
 $commands = $commands -join "`n"
 Start-Process wt.exe "PowerShell.exe -Command $commands" -Wait -Verb RunAs -WindowStyle Hidden
 # Hide and ignore vaultConfig
-Set-Content -Path "$vaultConfig\.gitignore" -Value "*`n!.gitignore"
+Set-Content -Path "$vaultConfig\.gitignore" -Value "*"
 $vaultConfig.Attributes = $item.Attributes -bor [System.IO.FileAttributes]::Hidden
 
 # Import workplace setup
