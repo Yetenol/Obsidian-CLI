@@ -1,6 +1,6 @@
 # Obsidian CLI
 
-[![Download script](https://img.shields.io/github/downloads/yetenol/Obsidian CLI/total.svg)](https://github.com/yetenol/Obsidian-CLI/releases/latest/download/obsidian.exe)
+[![Download script](https://img.shields.io/github/downloads/yetenol/Obsidian-CLI/total.svg)](https://github.com/yetenol/Obsidian-CLI/releases/latest/download/obsidian.exe)
 [![List releases](https://img.shields.io/github/release/yetenol/Obsidian-CLI.svg)](https://github.com/yetenol/Obsidian-CLI/releases)
 
 Obsidian CLI is a command line interface to create, open and delete Obsidian vaults and to share settings, plugins and layouts between vaults.
